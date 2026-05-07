@@ -1,16 +1,23 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
-
 export function getSupabaseClient(): SupabaseClient {
-  const url = getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL');
-  const anonKey = getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url) {
+    throw new Error(
+      'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
+        'Add it to .env.local and restart the dev server.'
+    );
+  }
+
+  if (!anonKey) {
+    throw new Error(
+      'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+        'Add it to .env.local and restart the dev server.'
+    );
+  }
+
   return createClient(url, anonKey);
 }
 
