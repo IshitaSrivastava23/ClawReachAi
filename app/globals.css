@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* Dashboard Container: 80/20 vertical split */
+.dashboard-container {
+  @apply h-screen w-screen flex flex-col bg-slate-50;
+}
+
+/* Results Grid Container: Top 80% */
+.results-section {
+  @apply flex-1 overflow-y-auto px-6 py-6 min-h-0;
+}
+
+/* Chat Input Container: Bottom 20% */
+.chat-section {
+  @apply h-1/5 flex-shrink-0 border-t border-slate-200 bg-white px-6 py-4 flex flex-col gap-3;
+}
+
+/* Creator Grid */
+.creators-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+}
+
+/* Scrollbar styling for results section */
+.results-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.results-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.results-section::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.results-section::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
