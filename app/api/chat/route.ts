@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { CoreMessage, generateText, tool } from 'ai';
 import { z } from 'zod';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { supabase } from '@/lib/supabase';
 
 const briefSchema = z.object({
@@ -44,7 +44,7 @@ function toCoreMessages(rawMessages: unknown): CoreMessage[] {
 }
 
 async function insertCampaign(brief: Brief) {
-  const { data, error } = await supabase
+  const { data, error: dbError } = await supabase
     .from('campaigns')
     .insert([
       {
@@ -58,8 +58,8 @@ async function insertCampaign(brief: Brief) {
     .select('id')
     .single();
 
-  if (error) {
-    throw new Error(`Failed to create campaign: ${error.message}`);
+  if (dbError) {
+    throw new Error(`Supabase Insert Failed: ${dbError.message}`);
   }
 
   return data;
@@ -67,11 +67,34 @@ async function insertCampaign(brief: Brief) {
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.AI_API_KEY) {
+      return NextResponse.json(
+        { error: 'Server Error: AI_API_KEY is missing' },
+        { status: 500 }
+      );
+    }
+
+    const baseURL = process.env.AI_BASE_URL;
+    if (!baseURL) {
+      return NextResponse.json(
+        { error: 'Server Error: AI_BASE_URL is missing' },
+        { status: 500 }
+      );
+    }
+
+    const modelName = process.env.AI_MODEL || 'openai/gpt-4o-mini';
+
     const body = await req.json();
     const messages = toCoreMessages(body?.messages);
 
+    const openai = createOpenAI({
+      apiKey: process.env.AI_API_KEY,
+      baseURL,
+      compatibility: 'compatible',
+    });
+
     const result = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: openai(modelName),
       system: systemPrompt,
       messages,
       tools: {
@@ -101,7 +124,8 @@ export async function POST(req: Request) {
       message: result.text || 'Tell me more about your campaign.',
     });
   } catch (error) {
+    console.error('🔥 BOUNCER API CRASH:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ status: 'error', message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
