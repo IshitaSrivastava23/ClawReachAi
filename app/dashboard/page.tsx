@@ -5,6 +5,8 @@ import { ChatInput } from '@/components/ChatInput';
 import { ResultsGrid } from '@/components/ResultsGrid';
 import { supabase } from '@/lib/supabase';
 import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
+import { useToast } from '@/components/ui/use-toast';
+import { Sparkles } from 'lucide-react';
 
 /**
  * Dashboard Page (Main View)
@@ -64,6 +66,7 @@ function normalizeSponsors(value: unknown): Sponsor[] {
 }
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
   const [creators, setCreators] = useState<Creator[]>([]);
@@ -120,6 +123,10 @@ export default function DashboardPage() {
           body: JSON.stringify({ messages: nextMessages }),
         });
 
+        if (!response.ok) {
+          throw new Error(`Bouncer API failed with status ${response.status}`);
+        }
+
         const payload = (await response.json()) as {
           status: 'started' | 'needs_info' | 'error';
           message?: string;
@@ -139,6 +146,11 @@ export default function DashboardPage() {
         }
       } catch (error) {
         console.error('Error processing message:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Failed to reach the Bouncer API.',
+          description: 'Please check your connection and try again.',
+        });
         setMessages((current) => [
           ...current,
           { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' },
@@ -188,25 +200,13 @@ export default function DashboardPage() {
           emptyState={
             <div className="text-center">
               <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
-                <svg
-                  className="h-6 w-6 text-indigo-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M14 10h-2m0 0H9m3 0V7m0 3v2m11-11H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z"
-                  />
-                </svg>
+                <Sparkles className="h-6 w-6 text-indigo-600" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mt-2">
-                Start Your Campaign
+                Awaiting Campaign Brief
               </h3>
               <p className="text-slate-600 text-sm mt-2 max-w-xs">
-                Describe your brand, target audience, and campaign goals in the chat below
+                Chat below to start discovering creators.
               </p>
             </div>
           }
